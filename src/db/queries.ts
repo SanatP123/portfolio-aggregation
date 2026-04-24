@@ -1,44 +1,71 @@
 import { supabase } from "@/lib/supabaseClient";
 
+// Get user holdings from users_data table
 export async function getUserHoldings(userId: string) {
   const { data, error } = await supabase
-    .from("holdings")
-    .select("*")
-    .eq("user_id", userId);
+    .from("users_data")
+    .select("data")
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    console.error("Error fetching holdings:", error);
+    return [];
   }
 
-  return data;
+  // Extract holdings from the JSON data
+  if (data && data.data && data.data.holdings) {
+    return data.data.holdings;
+  }
+
+  return [];
 }
 
+// Add transaction (this will need a separate transactions table if you want to track them)
 export async function addTransaction(transaction: {
   user_id: string;
   asset: string;
   amount: number;
   date: string;
 }) {
-  const { data, error } = await supabase.from("transactions").insert([transaction]);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  // For now, we'll just log this as we don't have a transactions table
+  console.log("Transaction would be added:", transaction);
+  
+  // If you want to implement this, you'd need to create a transactions table
+  // or update the users_data JSON to include transaction history
+  return [];
 }
 
+// Get performance data from users_data table
 export async function getPerformanceData(userId: string) {
   const { data, error } = await supabase
-    .from("performance")
-    .select("*")
-    .eq("user_id", userId);
+    .from("users_data")
+    .select("data")
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    console.error("Error fetching performance:", error);
+    return [];
   }
 
-  return data;
+  // Extract performance data if available
+  if (data && data.data && data.data.performance) {
+    return data.data.performance;
+  }
+
+  // Calculate performance from holdings if available
+  if (data && data.data && data.data.holdings) {
+    const totalValue = data.data.totalValue || 0;
+    return [
+      {
+        date: new Date().toISOString(),
+        value: totalValue
+      }
+    ];
+  }
+
+  return [];
 }
 
 export async function upsertUserData(userId: string, data: Record<string, unknown>) {
@@ -54,15 +81,42 @@ export async function upsertUserData(userId: string, data: Record<string, unknow
 }
 
 export async function getUserData(userId: string) {
+  const normalizedUserId = userId.trim();
+
   const { data, error } = await supabase
     .from("users_data")
     .select("*")
-    .eq("user_id", userId)
-    .single();
+    .eq("user_id", normalizedUserId)
+    .maybeSingle();
 
   if (error) {
-    throw new Error(error.message);
+    console.error("Error fetching user data:", error);
+    return null;
   }
 
-  return data;
+  if (data) {
+    return data;
+  }
+
+  return null;
+}
+
+// Helper to get total portfolio value
+export async function getPortfolioValue(userId: string) {
+  const { data, error } = await supabase
+    .from("users_data")
+    .select("data")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error fetching portfolio value:", error);
+    return 0;
+  }
+
+  if (data && data.data && data.data.totalValue) {
+    return data.data.totalValue;
+  }
+
+  return 0;
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { fetchPortfolioSummary } from "@/src/db/portfolioApi";
 import { useUser } from "@/src/hooks/useUser";
 
 type Transaction = {
@@ -7,6 +8,7 @@ type Transaction = {
   amount: number;
   date: string;
   type: "BUY" | "SELL";
+  source: "normalized" | "mock";
 };
 
 export default function TransactionTable() {
@@ -16,36 +18,32 @@ export default function TransactionTable() {
 
   useEffect(() => {
     async function fetchTransactions() {
-      if (!userId) return;
+      if (!isSignedIn || !userId) return;
 
       try {
-        const mockTransactions: Transaction[] = [
-          {
-            asset: "AAPL",
-            amount: 1800,
-            date: new Date(Date.now() - 86400000).toISOString(),
-            type: "BUY",
-          },
-          {
-            asset: "TSLA",
-            amount: 1250,
-            date: new Date(Date.now() - 172800000).toISOString(),
-            type: "BUY",
-          },
-        ];
+        setError(null);        const data = await fetchPortfolioSummary();
 
-        setTransactions(mockTransactions);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred.");
+        if (data.transactions.length > 0) {
+          setTransactions(
+            data.transactions.map((transaction) => ({
+              asset: transaction.symbol ?? transaction.transaction_type,
+              amount: Math.abs(Number(transaction.amount ?? 0)),
+              date: transaction.transaction_date,
+              type: transaction.transaction_type === "sell" ? "SELL" : "BUY",
+              source: "normalized",
+            }))
+          );
+          return;
         }
+
+        setTransactions([]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An unknown error occurred.");
       }
     }
 
     fetchTransactions();
-  }, [userId]);
+  }, [isSignedIn, userId]);
 
   if (!isLoaded) {
     return <div className="dashboard-card animate-pulse">Loading transactions...</div>;
@@ -72,7 +70,7 @@ export default function TransactionTable() {
           <p className="eyebrow">Recent transactions</p>
           <h2 className="card-title">Activity ledger</h2>
         </div>
-        <p className="text-sm text-stone-500">Showing latest portfolio activity</p>
+        <p className="text-sm text-stone-500">Showing synced portfolio activity</p>
       </div>
       {transactions.length > 0 ? (
         <div className="mt-8 overflow-x-auto rounded-[1.5rem] border border-stone-200/80 bg-white/45">
@@ -87,7 +85,7 @@ export default function TransactionTable() {
             </thead>
             <tbody>
               {transactions.map((transaction, index) => (
-                <tr key={index} className="border-b border-stone-200/80 transition last:border-0 hover:bg-white/75">
+                <tr key={`${transaction.asset}-${transaction.date}-${index}`} className="border-b border-stone-200/80 transition last:border-0 hover:bg-white/75">
                   <td className="p-4">
                     <span className={`rounded-full px-3 py-1 text-xs font-black tracking-[0.14em] ${
                       transaction.type === "BUY" ? "bg-emerald-100 text-emerald-900" : "bg-red-100 text-red-900"
@@ -105,13 +103,11 @@ export default function TransactionTable() {
         </div>
       ) : (
         <div className="mt-8 space-y-4">
-          <p className="text-stone-600">No transactions available.</p>
+          <p className="text-stone-600">No synced transactions available yet.</p>
           <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-5">
             <h3 className="font-semibold text-amber-950">Note</h3>
             <p className="mt-2 text-sm leading-6 text-amber-800">
-              Transaction tracking requires a separate transactions table in your database.
-              Currently, this is displaying mock data. To implement real transaction tracking,
-              you would need to create a transactions table in Supabase.
+              Plaid investment transactions can take a few minutes to become available after linking.
             </p>
           </div>
         </div>

@@ -12,6 +12,7 @@
     "@clerk/nextjs": "^6.38.2",
     "@supabase/supabase-js": "^2.103.3",
     "next": "16.1.6",
+    "plaid": "^42.1.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

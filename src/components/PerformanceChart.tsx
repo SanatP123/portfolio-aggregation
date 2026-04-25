@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUserData } from "@/src/db/queries";
+import { fetchPortfolioSummary } from "@/src/db/portfolioApi";
 import { useUser } from "@/src/hooks/useUser";
 
 type PerformanceEntry = {
@@ -17,37 +17,27 @@ export default function PerformanceChart() {
 
   useEffect(() => {
     async function fetchPerformance() {
-      if (!userId) return;
+      if (!isSignedIn || !userId) return;
 
       try {
-        const data = await getUserData(userId);
+        setError(null);        const data = await fetchPortfolioSummary();
+        setTotalValue(data.summary.totalValue);
 
-        if (data && data.data) {
-          const portfolioValue = Number(data.data.totalValue ?? 0);
-          setTotalValue(portfolioValue);
-
-          if (data.data.performance && data.data.performance.length > 0) {
-            setPerformance(data.data.performance);
-          } else if (portfolioValue) {
-            setPerformance([
-              {
-                date: new Date().toISOString(),
-                value: portfolioValue,
-              },
-            ]);
-          }
+        if (data.summary.totalValue) {
+          setPerformance([
+            {
+              date: data.summary.lastSyncedAt ?? new Date().toISOString(),
+              value: data.summary.totalValue,
+            },
+          ]);
         }
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred.");
-        }
+        setError(err instanceof Error ? err.message : "An unknown error occurred.");
       }
     }
 
     fetchPerformance();
-  }, [userId]);
+  }, [isSignedIn, userId]);
 
   if (!isLoaded) {
     return <div className="dashboard-card animate-pulse">Loading performance data...</div>;

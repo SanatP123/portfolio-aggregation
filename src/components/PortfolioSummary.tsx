@@ -1,19 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUserData } from "@/src/db/queries";
+import { fetchPortfolioSummary, type ApiHolding } from "@/src/db/portfolioApi";
 import { useUser } from "@/src/hooks/useUser";
 
-type Holding = {
+type HoldingView = {
   symbol: string;
   quantity: number;
   price: number;
+  marketValue: number;
+  accountName: string;
+  institutionName: string;
 };
 
 type PortfolioData = {
   totalValue: number;
-  holdings: Holding[];
+  holdings: HoldingView[];
+  source: "normalized" | "legacy" | "empty";
 };
+
+function getAccount(holding: ApiHolding) {
+  return Array.isArray(holding.brokerage_accounts)
+    ? holding.brokerage_accounts[0]
+    : holding.brokerage_accounts;
+}
 
 export default function PortfolioSummary() {
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
@@ -22,31 +32,33 @@ export default function PortfolioSummary() {
 
   useEffect(() => {
     async function fetchPortfolio() {
-      if (!userId) return;
+      if (!isSignedIn || !userId) return;
 
       try {
-        const data = await getUserData(userId);
+        setError(null);        const data = await fetchPortfolioSummary();
 
-        if (data?.data) {
-          setPortfolioData({
-            totalValue: Number(data.data.totalValue ?? 0),
-            holdings: Array.isArray(data.data.holdings) ? data.data.holdings : [],
-          });
-        } else {
-          setPortfolioData(null);
-          setError(`No portfolio row found for user_id: ${userId}`);
-        }
+        setPortfolioData({
+          totalValue: data.summary.totalValue,
+          source: data.summary.source,
+          holdings: data.holdings.map((holding) => {
+            const account = getAccount(holding);
+            return {
+              symbol: holding.symbol,
+              quantity: Number(holding.quantity ?? 0),
+              price: Number(holding.price ?? 0),
+              marketValue: Number(holding.market_value ?? 0),
+              accountName: account?.account_name ?? "Portfolio account",
+              institutionName: account?.institution_name ?? "Connected institution",
+            };
+          }),
+        });
       } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred.");
-        }
+        setError(err instanceof Error ? err.message : "An unknown error occurred.");
       }
     }
 
     fetchPortfolio();
-  }, [userId]);
+  }, [isSignedIn, userId]);
 
   if (!isLoaded) {
     return <div className="dashboard-card animate-pulse">Loading portfolio...</div>;
@@ -74,7 +86,7 @@ export default function PortfolioSummary() {
           <h2 className="card-title">Current position</h2>
         </div>
         <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-emerald-800">
-          Live
+          {portfolioData?.source === "normalized" ? "Synced" : "Legacy"}
         </span>
       </div>
       {portfolioData ? (
@@ -87,16 +99,19 @@ export default function PortfolioSummary() {
               ${Number(portfolioData.totalValue).toLocaleString()}
             </p>
           </div>
-          {portfolioData.holdings && portfolioData.holdings.length > 0 ? (
+          {portfolioData.holdings.length > 0 ? (
             <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
               {portfolioData.holdings.map((holding, index) => (
-                <div key={index} className="rounded-3xl border border-stone-200/80 bg-white/55 p-5 shadow-sm transition hover:-translate-y-1 hover:bg-white/80 hover:shadow-xl hover:shadow-stone-900/10">
+                <div key={`${holding.accountName}-${holding.symbol}-${index}`} className="rounded-3xl border border-stone-200/80 bg-white/55 p-5 shadow-sm transition hover:-translate-y-1 hover:bg-white/80 hover:shadow-xl hover:shadow-stone-900/10">
                   <div className="flex items-center justify-between">
                     <div className="text-xl font-black tracking-tight text-stone-950">{holding.symbol}</div>
                     <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
-                      {holding.quantity} shares
+                      {holding.quantity.toLocaleString()} shares
                     </span>
                   </div>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
+                    {holding.institutionName} · {holding.accountName}
+                  </p>
                   <div className="mt-5 flex items-end justify-between gap-4">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Price</p>
@@ -105,7 +120,7 @@ export default function PortfolioSummary() {
                     <div className="text-right">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">Value</p>
                       <p className="mt-1 text-lg font-bold text-emerald-800">
-                        ${(holding.quantity * holding.price).toLocaleString()}
+                        ${holding.marketValue.toLocaleString()}
                       </p>
                     </div>
                   </div>

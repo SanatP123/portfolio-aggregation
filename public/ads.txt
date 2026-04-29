@@ -1,3 +1,1 @@
-# Replace this placeholder with the exact ads.txt line from Google AdSense.
-# It will usually look like:
-# google.com, pub-1496544894534044, DIRECT, f08c47fec0942fa0
+google.com, pub-1496544894534044, DIRECT, f08c47fec0942fa0

@@ -85,7 +85,7 @@ export default function AnalyticsDashboard() {
         </div>
         <div className="mt-8 grid gap-3">
           {holdings.slice(0, 6).map((holding, index) => (
-            <div key={holding.symbol} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">
+            <div key={`${holding.symbol}-${index}`} className="flex items-center justify-between rounded-2xl bg-white/55 p-3">
               <div className="flex items-center gap-3">
                 <span className="h-3 w-3 rounded-full" style={{ background: palette[index % palette.length] }} />
                 <span className="font-bold text-stone-900">{holding.symbol}</span>
@@ -105,7 +105,7 @@ export default function AnalyticsDashboard() {
           {holdings.slice(0, 8).map((holding, index) => {
             const percent = totalValue ? (holding.value / totalValue) * 100 : 0;
             return (
-              <div key={holding.symbol}>
+              <div key={`${holding.symbol}-${index}`}>
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-black text-stone-950">{holding.symbol}</span>
                   <span className="font-semibold text-stone-500">${holding.value.toLocaleString()} · {percent.toFixed(1)}%</span>

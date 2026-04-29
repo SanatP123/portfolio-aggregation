@@ -19,6 +19,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof Error && error.message === "No connected Plaid accounts found.") {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return jsonError(error);
   }
 }

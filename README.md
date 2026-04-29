@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio Aggregation
+
+A Next.js portfolio dashboard for connecting brokerage accounts, syncing Plaid investment data, and viewing portfolio value, holdings, activity, and allocation analytics.
+
+## Tech Stack
+
+- Next.js App Router
+- React
+- TypeScript
+- Tailwind CSS
+- Clerk authentication
+- Supabase data storage
+- Plaid investment account linking
+- Vitest for unit tests
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a local environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+If `.env.example` is not present, create `.env.local` and add the Clerk, Supabase, and Plaid values used by the app.
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run test
+npm run test:watch
+```
 
-## Learn More
+## Testing Approach
 
-To learn more about Next.js, take a look at the following resources:
+This project now has a first unit-test layer with Vitest. New business logic should generally be written as small pure functions first, covered with tests, then wired into React components or API routes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Good first candidates for TDD:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Portfolio value and allocation calculations
+- Transaction normalization
+- Plaid/Supabase response mapping
+- API route error handling
+- Empty, loading, and signed-out UI states
 
-## Deploy on Vercel
+## AdSense
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app includes the AdSense account meta tag and global script for publisher `ca-pub-1496544894534044`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To show the left and right dashboard rail ads:
+
+1. Create two Display ad units in Google AdSense.
+2. Copy each ad unit slot ID.
+3. Add the slot IDs to `.env.local`:
+
+```bash
+NEXT_PUBLIC_ADSENSE_LEFT_SLOT=
+NEXT_PUBLIC_ADSENSE_RIGHT_SLOT=
+```
+
+4. Redeploy the site so the public environment variables are included in the client bundle.
+
+Side rail ads are desktop-only and hidden below the `xl` breakpoint.
+
+## Project Structure
+
+- `app/` - Next.js routes, layouts, API routes, and global styles
+- `src/components/` - dashboard UI components
+- `src/db/` - portfolio data access and API response types
+- `src/lib/` - shared utilities and service clients
+- `src/server/` - server-side Plaid and encryption helpers
+- `supabase/migrations/` - database schema migrations
+- `docs/` - project documentation

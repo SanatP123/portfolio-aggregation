@@ -20,6 +20,10 @@ body {
   font-family: var(--font-body);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 ::selection {
   background: #164e3b;
   color: #fff7ed;
@@ -27,15 +31,16 @@ body {
 
 .dashboard-card {
   border: 1px solid rgb(255 255 255 / 0.72);
-  border-radius: 2rem;
+  border-radius: 1.5rem;
   background: rgb(255 255 255 / 0.58);
   box-shadow: 0 24px 80px rgb(28 25 23 / 0.1);
-  padding: 1.5rem;
+  padding: 1.25rem;
   backdrop-filter: blur(22px);
 }
 
 @media (min-width: 640px) {
   .dashboard-card {
+    border-radius: 2rem;
     padding: 2rem;
   }
 }
@@ -52,8 +57,8 @@ body {
   margin-top: 0.35rem;
   color: #1c1917;
   font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: clamp(1.9rem, 8vw, 3rem);
   font-weight: 700;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   line-height: 0.95;
 }
